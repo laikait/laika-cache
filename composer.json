@@ -1,0 +1,61 @@
+{
+    "name": "laikait/laika-cache",
+    "description": "Caching package for Laika PHP MVC Framework.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Laika IT",
+            "email": "strblackhawk@gmail.com"
+        },
+        {
+            "name": "Showket Ahmed",
+            "email": "riyadhtayf@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "suggest": {
+        "ext-redis": "To use the redis cache driver",
+        "ext-memcached": "To use the memcached cache driver"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laika\\Cache\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Laika\\Cache\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "squizlabs/php_codesniffer": "^4.0.2",
+        "phpcompatibility/php-compatibility": "dev-develop",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.1",
+        "phpunit/phpunit": "^10.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "extra": {
+        "laika": {
+            "resources": {
+                "relays": {
+                    "path": "src/Relay",
+                    "namespace": "Laika\\Cache\\Relay",
+                    "contract": "Laika\\Relay\\RelayProvider"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "compat": "phpcs --standard=phpcs.xml --report=full",
+        "test": "phpunit"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
