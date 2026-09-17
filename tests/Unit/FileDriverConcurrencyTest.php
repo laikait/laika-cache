@@ -125,27 +125,48 @@ final class FileDriverConcurrencyTest extends TestCase
                 self::markTestSkipped('proc_open() is unavailable.');
             }
 
-            $handles[] = [$process, $log];
+            // Third slot: the exit code, once polling has seen the process end
+            $handles[] = [$process, $log, null];
         }
 
         return $handles;
     }
 
-    private function running(array $handles): bool
+    /**
+     * Before PHP 8.3 the exit code is reported exactly once: by the first
+     * proc_get_status() call that sees the process has ended. Every later call,
+     * and proc_close(), then return -1. So the code is kept the moment it
+     * appears, or a worker that exited cleanly would read as having failed.
+     */
+    private function running(array &$handles): bool
     {
-        foreach ($handles as [$process]) {
-            if ((proc_get_status($process)['running'] ?? false) === true) {
-                return true;
+        $running = false;
+
+        foreach ($handles as &$handle) {
+            if ($handle[2] !== null) {
+                continue;
+            }
+
+            $status = proc_get_status($handle[0]);
+
+            if (($status['running'] ?? false) === true) {
+                $running = true;
+            } else {
+                $handle[2] = (int) ($status['exitcode'] ?? -1);
             }
         }
+        unset($handle);
 
-        return false;
+        return $running;
     }
 
     private function close(array $handles): void
     {
-        foreach ($handles as [$process, $log]) {
-            $code = proc_close($process);
+        foreach ($handles as [$process, $log, $exited]) {
+            $closed = proc_close($process);
+            // proc_close() is authoritative on 8.3+; before that it is -1 for any
+            // process polling already reaped, and the recorded code is the real one
+            $code = ($closed === -1 && $exited !== null) ? $exited : $closed;
             $output = is_file($log) ? trim((string) file_get_contents($log)) : '';
 
             self::assertSame(0, $code, "a worker exited {$code}: {$output}");
